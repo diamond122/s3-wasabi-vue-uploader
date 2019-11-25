@@ -1,0 +1,8 @@
+node_modules/
+.idea
+**/.env.local
+**/.env
+.env
+.env.local
+dist_electron/
+.DS_Store
