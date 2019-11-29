@@ -5,11 +5,16 @@
       justify="center"
     >
       <v-col cols="10">
-        <v-card class="drop-zone" outlined>
+        <v-card
+          class="drop-zone"
+          outlined
+          :style="{ borderColor: $vuetify.theme.themes.dark.borderColor }"
+        >
           <v-col
             v-if="!fileName"
             @drop.prevent="onDropFile"
             @dragover.prevent
+            :style="{ backgroundColor: $vuetify.theme.themes.dark.background }"
           >
             <div class="text-center">
               <v-card-title
@@ -41,17 +46,22 @@
               <v-card-title
                 class="justify-center text-center"
               >
-                to upload
+                to {{type}}
               </v-card-title>
             </div>
           </v-col>
-          <v-col v-else class="justify-center align-center">
+          <v-col
+            v-else
+            class="justify-center align-center"
+            :style="{ backgroundColor: $vuetify.theme.themes.dark.background }"
+          >
             <div class="text-center">
               <v-card-text>{{fileName}}</v-card-text>
               <v-row class="justify-center">
                 <v-btn
                   class="mx-4"
                   @click="cancel"
+                  color="background"
                 >
                   Cancel
                 </v-btn>
@@ -59,8 +69,9 @@
                   class="mx-4"
                   :loading="isUploading"
                   @click="submit"
+                  color="background"
                 >
-                  Upload
+                  {{type}}
                 </v-btn>
               </v-row>
             </div>
@@ -77,6 +88,10 @@
   export default {
     name: 'Upload',
     props: {
+      type: {
+        type: String,
+        default: '',
+      },
       selectedCallback: Function,
     },
     data: () => ({

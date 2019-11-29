@@ -2,6 +2,7 @@
   <v-footer
     :inset="footer.inset"
     app
+    color="background"
   >
     <v-row>
       <div class="align-center justify-center d-flex mr-2">
@@ -13,6 +14,9 @@
         solo
         dense
         hide-details
+        color="background"
+        item-color="textColor"
+        :style="{ backgroundColor: $vuetify.theme.themes.dark.background }"
         class="select-accounts"
       >
       </v-select>
@@ -58,7 +62,11 @@
 </script>
 
 <style lang="scss" scoped>
+  @import '~vuetify/src/styles/styles.sass';
   .select-accounts {
     width: 300px;
+  }
+  .theme--dark.v-card {
+    background: map-get($material-dark, darken-1);
   }
 </style>
