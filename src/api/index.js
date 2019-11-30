@@ -1,24 +1,16 @@
 import StellarService from './stellar-service';
 import WasabiService from './wasabi-service';
 import CryptoService from './crypto-service';
-const formatDate = (date) => {
-  let d = new Date(date),
-    month = '' + (d.getMonth() + 1),
-    day = '' + d.getDate(),
-    year = d.getFullYear(),
-    hour = d.getHours(),
-    min = d.getMinutes(),
-    sec = d.getSeconds();
-  month = ('0' + month).slice(-2);
-  day = ('0' + day).slice(-2);
-  hour = ('0' + hour).slice(-2);
-  min = ('0' + min).slice(-2);
-  sec = ('0' + sec).slice(-2);
+import TimeUtil from '../utils/time';
 
-  return `${[year, month, day].join('-')} ${hour}:${min}:${sec}`;
+const uploadToWasabi = async (file) => {
+  const currentTime = TimeUtil.formatDate(new Date());
+  await WasabiService.upload({
+    Body: file,
+    Key: currentTime
+  });
 };
-
-const uploadFile = async (file) => {
+const uploadToStellar = async (file) => {
   const memoHashHex = await CryptoService.getHashHex(file);
 
   await StellarService.upload(memoHashHex, file.size.toString())
@@ -26,11 +18,15 @@ const uploadFile = async (file) => {
       console.error('Stellar Error:', err);
       throw err;
     });
-  const currentTime = formatDate(new Date());
-  await WasabiService.upload({
-    Body: file,
-    Key: currentTime
-  });
+};
+const uploadFile = async (file) => {
+  await uploadToStellar(file);
+  await uploadToWasabi(file);
+};
+
+const getFileHash = async (file) => {
+  const memoHashHex = await CryptoService.getHashHex(file);
+  return memoHashHex;
 };
 
 const getRecentFiles = (count) => {
@@ -43,9 +39,16 @@ const checkNetworkStatus = async () => {
 const getStellarKeys = () => {
   return StellarService.getKeys();
 };
+const signFile = (file) => {
+  return CryptoService.signFile(file);
+};
 export default {
   checkNetworkStatus,
   uploadFile,
   getRecentFiles,
   getStellarKeys,
+  getFileHash,
+  signFile,
+  uploadToStellar,
+  uploadToWasabi,
 };

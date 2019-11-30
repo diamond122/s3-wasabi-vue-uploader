@@ -79,11 +79,47 @@
         </v-card>
       </v-col>
     </v-row>
+    <v-dialog
+      v-model="dialog.show"
+      width="500"
+    >
+      <v-card
+        :style="{ backgroundColor: $vuetify.theme.themes.dark.background }"
+      >
+        <v-card-title
+          class="headline grey lighten-2"
+          primary-title
+          :style="{ backgroundColor: `${$vuetify.theme.themes.dark.background} !important` }"
+        >
+          {{dialog.title}}
+        </v-card-title>
+
+        <v-card-text>
+          {{dialog.content}}
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            text
+            @click="dialog.show = false"
+          >
+            {{dialog.label}}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 <script>
 
   import { mapActions } from 'vuex';
+  import Service from '../../api';
+  import fs from 'fs';
+  import TimeUtil from '../../utils/time';
 
   export default {
     name: 'Upload',
@@ -95,7 +131,12 @@
       selectedCallback: Function,
     },
     data: () => ({
-      dialog: false,
+      dialog: {
+        show: false,
+        title: '',
+        content: '',
+        label: 'OK'
+      },
       isUploading: false,
       fileName: '',
       fileUrl: '',
@@ -119,11 +160,12 @@
         }
         this.fileName = file.name;
         const fr = new FileReader();
-        fr.readAsDataURL(file);
         fr.addEventListener('load', () => {
           this.fileData = fr.result;
           this.fileMeta = file;
-        })
+          console.log('result:', this.fileMeta);
+        });
+        fr.readAsDataURL(file);
       },
       onDropFile(e) {
         const files = e.dataTransfer.files;
@@ -144,12 +186,81 @@
       cancel() {
         this.initFile();
       },
+      async hashFile(file) {
+        const hashHex = await Service.getFileHash(file);
+        const hashFileInfo = `${file.name}|${hashHex}`;
+        const { app } = require('electron').remote;
+        const workingDir = `${app.getAppPath()}/hash logs`;
+        if (!fs.existsSync(workingDir)){
+          fs.mkdirSync(workingDir);
+        }
+        const fileName = TimeUtil.formatDate(new Date());
+        const filePath = `${workingDir}/${fileName}`;
+        fs.writeFile(filePath, hashFileInfo, (err) => {
+          if (!err) {
+            console.log('Hash Saved!');
+            this.dialog.title = 'Hash Success!';
+            this.dialog.content = hashHex;
+            this.dialog.show = true;
+          } else {
+            console.log('Hash Failed!', err);
+          }
+        });
+      },
+      async signFile(meta, file) {
+        const {signedStr} = await Service.signFile(file);
+        const fileName = `${meta.name}.signed`;
+
+        const { app } = require('electron').remote;
+        const workingDir = app.getAppPath();
+        if (!fs.existsSync(workingDir)){
+          fs.mkdirSync(workingDir);
+        }
+
+        const signedFile = new File([signedStr], fileName, {
+          type: meta.type,
+          lastModified: new Date()
+        });
+
+        const uploadResult = await Service.uploadToWasabi(signedFile).catch(err => err);
+        if (typeof uploadResult === 'string' && uploadResult.toString() === 'Error!') {
+          return;
+        }
+
+        const { dialog } = require('electron').remote;
+        const filePath = await new Promise((resolve, reject) => dialog.showSaveDialog({
+          title: 'Save Signed File',
+          defaultPath: `*/${fileName}`,
+        }, (path) => {
+          if (path) {
+            resolve(path);
+          } else {
+            reject();
+          }
+        }));
+        if (filePath) {
+          await new Promise((resolve, reject) => fs.writeFile(filePath, signedStr, (err) => {
+            if (!err) {
+              console.log('success!', signedStr, require('path').dirname(meta.path));
+              resolve();
+            } else {
+              reject();
+            }
+          }));
+        }
+      },
       async submit() {
         if (!this.fileMeta || this.fileData === '') return;
 
         this.isUploading = true;
 
-        await this.uploadFile(this.fileMeta);
+        if (this.type === 'hash and upload') {
+          await this.uploadFile(this.fileMeta);
+        } else if (this.type === 'hash') {
+          await this.hashFile(this.fileData);
+        } else if (this.type === 'sign') {
+          await this.signFile(this.fileMeta, this.fileData);
+        }
 
         this.isUploading = false;
       },

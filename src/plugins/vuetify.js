@@ -14,13 +14,13 @@ export default new Vuetify({
     dark: true,
     themes: {
       dark: {
-        primary: '#ff0000',
+        primary: '#fff',
         secondary: "#81C44B",
         accent: "#8c9eff",
         error: "#b71c1c",
         borderColor: '#fff',
         textColor: '#fff',
-        Highlighted: '#81C44B',
+        highlighted: '#81C44B',
         background: '#326394',
         darkBackground: '#153657',
       },
