@@ -186,7 +186,7 @@
       cancel() {
         this.initFile();
       },
-      async hashFile(file) {
+      async hashFile(file, silent) {
         const hashHex = await Service.getFileHash(file);
         const hashFileInfo = `${file.name}|${hashHex}`;
         const { app } = require('electron').remote;
@@ -199,9 +199,11 @@
         fs.writeFile(filePath, hashFileInfo, (err) => {
           if (!err) {
             console.log('Hash Saved!');
-            this.dialog.title = 'Hash Success!';
-            this.dialog.content = hashHex;
-            this.dialog.show = true;
+            if (!silent) {
+              this.dialog.title = 'Hash Success!';
+              this.dialog.content = hashHex;
+              this.dialog.show = true;
+            }
           } else {
             console.log('Hash Failed!', err);
           }
@@ -254,12 +256,19 @@
 
         this.isUploading = true;
 
-        if (this.type === 'hash and upload') {
-          await this.uploadFile(this.fileMeta);
-        } else if (this.type === 'hash') {
-          await this.hashFile(this.fileData);
-        } else if (this.type === 'sign') {
-          await this.signFile(this.fileMeta, this.fileData);
+        try {
+          if (this.type === 'hash and upload') {
+            await this.hashFile(this.fileData, true);
+            await this.uploadFile(this.fileMeta).catch(err => err);
+          } else if (this.type === 'hash') {
+            await this.hashFile(this.fileData);
+          } else if (this.type === 'sign') {
+            await this.signFile(this.fileMeta, this.fileData);
+          } else if (this.type === 'upload') {
+            await this.uploadFile(this.fileMeta);
+          }
+        } catch (e) {
+          console.log('error:', e);
         }
 
         this.isUploading = false;
