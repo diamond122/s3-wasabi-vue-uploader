@@ -17,6 +17,19 @@ const upload = async (name, value) => {
   transaction.sign(pair);
   return server.submitTransaction(transaction);
 };
+const attachFile = async (attachment, attachMemo, name, value) => {
+  const account = await server.loadAccount(pair.publicKey());
+  const transaction = new TransactionBuilder(account)
+    .addMemo(attachMemo)
+    .addOperation(Operation.manageData({
+      name,
+      value
+    }))
+    .setTimeout(TimeoutInfinite)
+    .build();
+  transaction.sign(pair);
+  return server.submitTransaction(transaction);
+};
 const checkNetworkStatus = async () => {
   const now = new Date();
   const ledgerResult = await server
@@ -38,4 +51,5 @@ export default {
   checkNetworkStatus,
   upload,
   getKeys,
+  attachFile,
 };

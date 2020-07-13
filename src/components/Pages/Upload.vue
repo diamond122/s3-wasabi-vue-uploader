@@ -186,6 +186,9 @@
       cancel() {
         this.initFile();
       },
+      async pushFile(fileMeta, fileData) {
+        await Service.pushFile(fileMeta, fileData);
+      },
       async hashFile(file, silent) {
         const hashHex = await Service.getFileHash(file);
         const hashFileInfo = `${file.name}|${hashHex}`;
@@ -266,6 +269,8 @@
             await this.signFile(this.fileMeta, this.fileData);
           } else if (this.type === 'upload') {
             await this.uploadFile(this.fileMeta);
+          } else if (this.type === 'push') {
+            await this.pushFile(this.fileMeta, this.fileData);
           }
         } catch (e) {
           console.log('error:', e);

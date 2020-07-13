@@ -1,7 +1,7 @@
 import StellarService from './stellar-service';
 import WasabiService from './wasabi-service';
-import CryptoService from './crypto-service';
 import TimeUtil from '../utils/time';
+import CryptoService from './crypto-service';
 
 const uploadToWasabi = async (file) => {
   const currentTime = TimeUtil.formatDate(new Date());
@@ -11,7 +11,7 @@ const uploadToWasabi = async (file) => {
   });
 };
 const uploadToStellar = async (file) => {
-  const memoHashHex = await CryptoService.getHashHex(file);
+  const memoHashHex = await CryptoService.getFileHashHex(file);
 
   await StellarService.upload(memoHashHex, file.size.toString())
     .catch((err) => {
@@ -25,8 +25,7 @@ const uploadFile = async (file) => {
 };
 
 const getFileHash = async (file) => {
-  const memoHashHex = await CryptoService.getHashHex(file);
-  return memoHashHex;
+  return await CryptoService.getFileHashHex(file);
 };
 
 const getRecentFiles = (count) => {
@@ -42,6 +41,24 @@ const getStellarKeys = () => {
 const signFile = (file) => {
   return CryptoService.signFile(file);
 };
+const pushFile = async (fileMeta, fileData) => {
+  const nonce = CryptoService.getRandomBytes(16);
+  const attachment = {
+    nonce: nonce.toString('hex'),
+    transaction: {
+      note: fileData,
+    }
+  };
+  const memoHashHex = await CryptoService.getFileHashHex(fileMeta);
+  const attachMemo = await CryptoService.getHashHex(attachment);
+  console.log('attachment:', attachment);
+
+  return await StellarService.attachFile(attachment, attachMemo, memoHashHex, fileMeta.size.toString())
+    .catch((err) => {
+      console.error('Stellar Error:', err);
+      throw err;
+    });
+};
 export default {
   checkNetworkStatus,
   uploadFile,
@@ -49,6 +66,6 @@ export default {
   getStellarKeys,
   getFileHash,
   signFile,
-  uploadToStellar,
   uploadToWasabi,
+  pushFile,
 };

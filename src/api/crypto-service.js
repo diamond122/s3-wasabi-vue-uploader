@@ -13,12 +13,21 @@ const convertFile2JSON = (file) => {
   };
   return JSON.stringify(fileData);
 };
-const getHashHex = async (file) => {
+const getFileHashHex = async (file) => {
   const hash = crypto.createHash('sha256');
   hash.update(convertFile2JSON(file));
   return await hash.digest('hex');
 };
-
+const getRandomBytes = (length) => {
+  return crypto.randomBytes(length);
+};
+const getHashHex = (raw) => {
+  const hash = crypto.createHash('sha256');
+  if (raw instanceof Object) {
+    hash.update(JSON.stringify(raw));
+  } else hash.update(raw);
+  return hash.digest('hex');
+};
 const signFile = (file) => {
   return new Promise((resolve, reject) => kbpgp.KeyManager.import_from_armored_pgp({
     armored: Keys.alice_pgp_public_key
@@ -43,5 +52,7 @@ const signFile = (file) => {
 
 export default {
   signFile,
+  getFileHashHex,
+  getRandomBytes,
   getHashHex,
 };

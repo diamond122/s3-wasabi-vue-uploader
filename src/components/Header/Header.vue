@@ -9,7 +9,7 @@
       @click.stop="primaryDrawer.model = !primaryDrawer.model">
     </v-app-bar-nav-icon>
     <v-spacer></v-spacer>
-    <v-toolbar-title>LotBlock Blockchain Link</v-toolbar-title>
+    <v-toolbar-title>LotBlok Blockchain Link</v-toolbar-title>
     <v-spacer></v-spacer>
   </v-app-bar>
 </template>
